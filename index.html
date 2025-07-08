@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Поймай Labubu</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Comic Sans MS', cursive;
+      background: linear-gradient(to bottom, #b2ebf2, #fce4ec);
+      overflow: hidden;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ff4081;
+      margin: 15px 0;
+      font-size: 22px;
+    }
+
+    #score {
+      font-size: 24px;
+      text-align: center;
+      color: #4caf50;
+    }
+
+    #gameArea {
+      position: relative;
+      width: 100%;
+      height: 80vh;
+      background: linear-gradient(to bottom, #fce4ec, #ffffff);
+      overflow: hidden;
+    }
+
+    .box {
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      animation: fall 5s linear forwards;
+      cursor: pointer;
+    }
+
+    .box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    @keyframes fall {
+      0% { top: -270px; }
+      100% { top: 90%; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎧 Слушай и находи нужного Labubu!</h1>
+  <div id="score">Очки: 0</div>
+  <div id="gameArea"></div>
+
+  <script>
+    const gameArea = document.getElementById("gameArea");
+    const scoreEl = document.getElementById("score");
+
+    let score = 0;
+    let spawnCount = 0;
+    let targetNumber = getRandomNumber();
+
+    // 🔊 Предзагрузка аудио
+    const audioMap = {};
+    for (let i = 1; i <= 20; i++) {
+      const padded = i.toString().padStart(2, '0');
+      const src = `sounds/${padded}_Chapter 1.mp3`;
+      audioMap[i] = new Audio(src);
+      audioMap[i].load();
+    }
+
+    function getRandomNumber() {
+      return Math.floor(Math.random() * 20) + 1;
+    }
+
+    function playTargetAudio(num) {
+      const original = audioMap[num];
+      if (!original) return;
+
+      // Создать клон для воспроизведения
+      const audioClone = original.cloneNode();
+      audioClone.play();
+    }
+
+    function updateTargetNumber() {
+      targetNumber = getRandomNumber();
+      playTargetAudio(targetNumber);
+    }
+
+    // 🔁 Повтор озвучки каждые 15 секунд
+    setInterval(() => {
+      playTargetAudio(targetNumber);
+    }, 15000);
+
+    function spawnBox() {
+      spawnCount++;
+      const box = document.createElement("div");
+      box.classList.add("box");
+
+      let number;
+      if (spawnCount % 7 === 0) {
+        number = targetNumber;
+      } else {
+        do {
+          number = getRandomNumber();
+        } while (number === targetNumber);
+      }
+
+      const img = document.createElement("img");
+      img.src = `images/${number}.png`;
+      img.alt = number.toString();
+
+      box.appendChild(img);
+
+      const left = Math.random() * (window.innerWidth - 260); // 250px + 10px отступ
+      box.style.left = left + "px";
+
+      box.addEventListener("click", () => {
+        if (number === targetNumber) {
+          score++;
+          scoreEl.textContent = "Очки: " + score;
+          updateTargetNumber();
+        } else {
+          score = Math.max(0, score - 1);
+          scoreEl.textContent = "Очки: " + score;
+        }
+        box.remove();
+      });
+
+      gameArea.appendChild(box);
+      setTimeout(() => {
+        if (box.parentElement) box.remove();
+      }, 5000);
+    }
+
+    // 🚀 Запуск
+    updateTargetNumber();
+    setInterval(spawnBox, 1500);
+  </script>
+</body>
+</html>
