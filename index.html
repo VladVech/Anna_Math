@@ -14,7 +14,7 @@
     h1 {
       text-align: center;
       color: #ff4081;
-      margin: 15px 0;
+      margin: 10px 0 5px;
       font-size: 22px;
     }
 
@@ -22,6 +22,21 @@
       font-size: 24px;
       text-align: center;
       color: #4caf50;
+    }
+
+    #controls {
+      text-align: center;
+      margin: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      background-color: #ff80ab;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
     }
 
     #gameArea {
@@ -56,15 +71,23 @@
 
   <h1>🎧 Слушай и находи нужного Labubu!</h1>
   <div id="score">Очки: 0</div>
+
+  <div id="controls">
+    <button id="pauseBtn">⏸ Пауза</button>
+  </div>
+
   <div id="gameArea"></div>
 
   <script>
     const gameArea = document.getElementById("gameArea");
     const scoreEl = document.getElementById("score");
+    const pauseBtn = document.getElementById("pauseBtn");
 
     let score = 0;
     let spawnCount = 0;
     let targetNumber = getRandomNumber();
+    let paused = false;
+    let spawnInterval, repeatAudioInterval;
 
     // 🔊 Предзагрузка аудио
     const audioMap = {};
@@ -80,10 +103,9 @@
     }
 
     function playTargetAudio(num) {
+      if (paused) return;
       const original = audioMap[num];
       if (!original) return;
-
-      // Создать клон для воспроизведения
       const audioClone = original.cloneNode();
       audioClone.play();
     }
@@ -93,12 +115,8 @@
       playTargetAudio(targetNumber);
     }
 
-    // 🔁 Повтор озвучки каждые 15 секунд
-    setInterval(() => {
-      playTargetAudio(targetNumber);
-    }, 15000);
-
     function spawnBox() {
+      if (paused) return;
       spawnCount++;
       const box = document.createElement("div");
       box.classList.add("box");
@@ -115,10 +133,9 @@
       const img = document.createElement("img");
       img.src = `images/${number}.png`;
       img.alt = number.toString();
-
       box.appendChild(img);
 
-      const left = Math.random() * (window.innerWidth - 260); // 250px + 10px отступ
+      const left = Math.random() * (window.innerWidth - 260);
       box.style.left = left + "px";
 
       box.addEventListener("click", () => {
@@ -139,9 +156,33 @@
       }, 5000);
     }
 
-    // 🚀 Запуск
+    function startGameLoop() {
+      spawnInterval = setInterval(spawnBox, 1500);
+      repeatAudioInterval = setInterval(() => {
+        playTargetAudio(targetNumber);
+      }, 15000);
+    }
+
+    function stopGameLoop() {
+      clearInterval(spawnInterval);
+      clearInterval(repeatAudioInterval);
+    }
+
+    // ▶ Пауза / Возобновление
+    pauseBtn.addEventListener("click", () => {
+      paused = !paused;
+      if (paused) {
+        pauseBtn.textContent = "▶ Продолжить";
+        stopGameLoop();
+      } else {
+        pauseBtn.textContent = "⏸ Пауза";
+        startGameLoop();
+      }
+    });
+
+    // 🚀 Старт
     updateTargetNumber();
-    setInterval(spawnBox, 1500);
+    startGameLoop();
   </script>
 </body>
 </html>
